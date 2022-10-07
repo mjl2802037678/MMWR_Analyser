@@ -1,0 +1,11 @@
+
+数据文件仅仅适用2种类型，并且特殊的存储方式：
+    1. mat文件，使用了TI给的解析程序，将bin文件解析后结果。
+        radarCube数据结构==》rfParams和dim存储数据信息; data存储了多帧数据，每帧结构 （128发射chirp * numTx）× 4接收Rx × 单个chirp的128adc采样点
+        Tx1先发射1个chirp，然后Tx2发射一个chirp。共128次Chirp发射，每次两个发射天线先后发射chirp
+    2. csv文件，自定义串口接收数据的格式。
+
+
+Stage1: 使用1DFFT后数据进行分析
+    1. 单个chirp的幅度谱abs显示；128chirps的幅度谱abs显示（只选中单个frame，单个天线）
+    2. 128个chirps的IQ数据图（选中单个frame，单个天线 or 多个frame，多个天线beamforming）
