@@ -9,6 +9,7 @@ def plot_color(colorMatrix,rangeBins,dopplerBins):
     plt.colorbar(c)
     return c
 
+
 def plot_3D(abs2D):
     ax3=plt.axes(projection='3d')
     size = abs2D.shape
