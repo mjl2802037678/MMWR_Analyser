@@ -1,8 +1,3 @@
-"""
-2022.8.23
-该版本增加保存按钮，open seiral后不自动存储数据，点击save后才自动保存数据
-可以随时保存，不用重启
-"""
 import serial
 import threading
 import numpy as np
@@ -12,10 +7,12 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 import pyqtgraph as pg
 import matplotlib.pyplot as plt
-from main_cli import plot_IQData_fftOut1D_withoutDC,plot_IQData_fftOut1D
+from main_cli import plot_IQData_fftOut1D_withoutDC,plot_IQData_fftOut1D, plot_IQData_fftOut1D_basedFrames
 
 dcList = ['with dc', 'without dc']
+meanList=["NO", "YES"]
 withoutDC=False#默认存在DC
+withoutMEAN=True#默认不求均值
 nBeam=1
 filePath = r"D:\Minjl\阶段六：验证model数据\mat文件\4.20头端雷达\闵佳乐\手大幅度adc_data.mat"
 frameIdxs=[]
@@ -26,10 +23,17 @@ rangeIdxs=[0,1,2,3,4,5,6,7]
 
 def press_Generator():
     global withoutDC,frameIdxs,filePath,nBeam,rangeIdxs
-    if withoutDC==True:
-        plot_IQData_fftOut1D_withoutDC(filePath, frameIdxs, nBeam,rangeIdxs)
+    global withoutMEAN
+
+    if withoutMEAN==True:
+        if withoutDC==True:
+            plot_IQData_fftOut1D_withoutDC(filePath, frameIdxs, nBeam,rangeIdxs)
+        else:
+            plot_IQData_fftOut1D(filePath, frameIdxs, nBeam,rangeIdxs)
     else:
-        plot_IQData_fftOut1D(filePath, frameIdxs, nBeam,rangeIdxs)
+        #frame内求均值，暂时不考虑这些frame之间去DC
+        plot_IQData_fftOut1D_basedFrames(filePath, frameIdxs, nBeam, rangeIdxs)
+
     plt.show()
 
 def press_Close():
@@ -42,6 +46,14 @@ def passDC(indx):
         withoutDC=False
     else:
         withoutDC=True
+
+def passMEAN(indx):
+    #每个frame对所有chirp进行均值
+    global meanList,withoutMEAN
+    if meanList[indx]=="NO":
+        withoutMEAN=True
+    else:
+        withoutMEAN=False
 
 def passFrameIdx(txt):
     global frameIdxs
@@ -79,6 +91,7 @@ def passFilepath(txt):
 if __name__ == "__main__":
     app = QApplication([])
     w=QWidget()
+    layout=QGridLayout()
 
     '1. IQ generator部分'
     pathEdit=QLineEdit()
@@ -93,7 +106,7 @@ if __name__ == "__main__":
     dcEdit=QComboBox()
     dcEdit.addItems(dcList)
     dcEdit.setCurrentIndex(0)
-    dcEdit.activated.connect(passDC)#IQ图是否去DC显示
+    dcEdit.activated.connect(passDC)#IQ图是否去DC显示；如果extraPanel中选择mean，此处dc对应了frames序列的dc
     nBeamEdit=QComboBox()
     nBeamEdit.addItems(["1","4","8"])
     nBeamEdit.setCurrentIndex(0)
@@ -102,17 +115,30 @@ if __name__ == "__main__":
     btn_generator.clicked.connect(press_Generator)
     btn_close = QPushButton('Close All')
     btn_close.clicked.connect(press_Close)
-    layout=QGridLayout()
-    formLayout=QFormLayout()
-    w.setLayout(layout)
-    formLayout.addRow("filePath            ",pathEdit)
-    formLayout.addRow("frameIdxs       ",frameIdxEdit)
-    formLayout.addRow("rangeIdxs       ",rangeIdxEdit)
-    formLayout.addRow("withDC       ",dcEdit)
-    formLayout.addRow("nBeam       ",nBeamEdit)
-    layout.addLayout(formLayout,0,0)
-    layout.addWidget(btn_generator,1,0)
-    layout.addWidget(btn_close,2,0)
 
+    "基础的IQ选项panel,基于chirp之间分析"
+    formLayout_0=QFormLayout()
+    formLayout_0.addRow("filePath            ",pathEdit)
+    formLayout_0.addRow("frameIdxs       ",frameIdxEdit)
+    formLayout_0.addRow("rangeIdxs       ",rangeIdxEdit)
+    formLayout_0.addRow("withDC       ",dcEdit)
+    formLayout_0.addRow("nBeam       ",nBeamEdit)
+    layout.addLayout(formLayout_0, 0, 0)
+
+    "增加额外的panel，基于frame进行分析；"
+    extraLabel=QLabel("Based Frames")
+    meanEdit=QComboBox()
+    meanEdit.addItems(meanList)
+    meanEdit.setCurrentIndex(0)
+    meanEdit.activated.connect(passMEAN)  #默认不对chirps进行平均
+    formLayout_1 = QFormLayout()
+    formLayout_1.addRow(extraLabel)
+    formLayout_1.addRow("MEAN        ",meanEdit)
+
+    layout.addLayout(formLayout_1, 1, 0)
+    layout.addWidget(btn_generator,2,0)
+    layout.addWidget(btn_close,3,0)
+    w.setLayout(layout)
+    w.setWindowTitle("IQ data")
     w.show()
     app.exec()

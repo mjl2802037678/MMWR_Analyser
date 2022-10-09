@@ -12,24 +12,21 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 import pyqtgraph as pg
 import matplotlib.pyplot as plt
-from main_cli import plot_IQData_fftOut1D_withoutDC,plot_IQData_fftOut1D
+from main_cli import plot_ampSpectrum_fftOut1D,plot_ampSpectrum_fftOut1D_withoutDC
 
 dcList = ['with dc', 'without dc']
 withoutDC=False#默认存在DC
 nBeam=1
 filePath = r"D:\Minjl\阶段六：验证model数据\mat文件\4.20头端雷达\闵佳乐\手大幅度adc_data.mat"
-frameIdxs=[]
-frameIdxs.extend(range(0,10))
-frameIdxs.extend(range(20,30))
-
+frameIdxs=[0,10]
 rangeIdxs=[0,1,2,3,4,5,6,7]
 
 def press_Generator():
     global withoutDC,frameIdxs,filePath,nBeam,rangeIdxs
     if withoutDC==True:
-        plot_IQData_fftOut1D_withoutDC(filePath, frameIdxs, nBeam,rangeIdxs)
+        plot_ampSpectrum_fftOut1D_withoutDC(filePath, frameIdxs, nBeam,rangeIdxs)
     else:
-        plot_IQData_fftOut1D(filePath, frameIdxs, nBeam,rangeIdxs)
+        plot_ampSpectrum_fftOut1D(filePath, frameIdxs, nBeam,rangeIdxs)
     plt.show()
 
 def press_Close():
@@ -46,16 +43,9 @@ def passDC(indx):
 def passFrameIdx(txt):
     global frameIdxs
     frames = re.findall("\d+\.?\d*", txt)  # 正则表达式
-    # frameIdxs=[int(i) for i in frames]
-    startIdx=0
-    endIdx=0
     frameIdxs = []
-    for i in range(len(frames)):
-        if i%2==0:
-            startIdx=int(frames[i])
-        else:
-            endIdx=int(frames[i])
-            frameIdxs.extend(range(startIdx, endIdx))
+    for i in frames:
+        frameIdxs.append(int(i))
 
 
 
@@ -80,12 +70,12 @@ if __name__ == "__main__":
     app = QApplication([])
     w=QWidget()
 
-    '1. IQ generator部分'
+    '2. amp generator部分'
     pathEdit=QLineEdit()
     pathEdit.setText(filePath)
     pathEdit.textChanged.connect(passFilepath)#导入文件名
     frameIdxEdit=QLineEdit()
-    frameIdxEdit.setText("[0,10),[20,30)")
+    frameIdxEdit.setText("[0,10]")
     frameIdxEdit.textChanged.connect(passFrameIdx)#IQ图显示几个frame数据
     rangeIdxEdit=QLineEdit()
     rangeIdxEdit.setText("[0,1,2,3,4,5,6,7]")
@@ -98,7 +88,7 @@ if __name__ == "__main__":
     nBeamEdit.addItems(["1","4","8"])
     nBeamEdit.setCurrentIndex(0)
     nBeamEdit.activated.connect(passNBeam)#默认1天线
-    btn_generator = QPushButton('IQGrpah Generator')
+    btn_generator = QPushButton('AMPGrpah Generator')
     btn_generator.clicked.connect(press_Generator)
     btn_close = QPushButton('Close All')
     btn_close.clicked.connect(press_Close)
@@ -113,6 +103,6 @@ if __name__ == "__main__":
     layout.addLayout(formLayout,0,0)
     layout.addWidget(btn_generator,1,0)
     layout.addWidget(btn_close,2,0)
-
+    w.setWindowTitle("amp")
     w.show()
     app.exec()
